@@ -11,4 +11,10 @@
       <PackageReference Include="System.Data.SQLite" Version="1.0.118" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Content Include="..\README.MD">
+        <Link>README.MD</Link>
+      </Content>
+    </ItemGroup>
+
 </Project>
