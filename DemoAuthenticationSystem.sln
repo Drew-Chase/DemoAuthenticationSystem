@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoAuthenticationSystem.Lib", "DemoAuthenticationSystem.Lib\DemoAuthenticationSystem.Lib.csproj", "{84EDAA6B-9192-4440-B940-804FEE1D4023}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoAuthenticationSystem.CLI", "DemoAuthenticationSystem.CLI\DemoAuthenticationSystem.CLI.csproj", "{AC4861BB-3E9F-4620-9E9D-13E816805941}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoAuthenticationSystem.Web", "DemoAuthenticationSystem.Web\DemoAuthenticationSystem.Web.csproj", "{AD9A68E9-613E-4A7B-9E2E-C9CC051C5BBD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{84EDAA6B-9192-4440-B940-804FEE1D4023}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{84EDAA6B-9192-4440-B940-804FEE1D4023}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{84EDAA6B-9192-4440-B940-804FEE1D4023}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{84EDAA6B-9192-4440-B940-804FEE1D4023}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AC4861BB-3E9F-4620-9E9D-13E816805941}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AC4861BB-3E9F-4620-9E9D-13E816805941}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC4861BB-3E9F-4620-9E9D-13E816805941}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AC4861BB-3E9F-4620-9E9D-13E816805941}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AD9A68E9-613E-4A7B-9E2E-C9CC051C5BBD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AD9A68E9-613E-4A7B-9E2E-C9CC051C5BBD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AD9A68E9-613E-4A7B-9E2E-C9CC051C5BBD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AD9A68E9-613E-4A7B-9E2E-C9CC051C5BBD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
