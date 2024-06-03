@@ -11,7 +11,7 @@ public struct User()
     /// <remarks>
     /// The Id property represents the unique identifier of a User in the system. It is an integer value that is automatically generated when a User is created.
     /// </remarks>
-    public int Id { get; internal set; }
+    public string Id { get; internal set; }
 
     /// <summary>
     /// Gets or sets the username of the user.
