@@ -114,18 +114,77 @@ public sealed class UserManager : IDisposable
     /// <returns>True if the user exists, false otherwise.</returns>
     public bool TryGetUserById(string id, [NotNullWhen(true)] out User? user) => (user = GetUserById(id)) != null;
 
-    public bool AuthenticateUser(string username, string password)
+    /// <summary>
+    /// Authenticates a user by verifying the provided username or email and password.
+    /// </summary>
+    /// <param name="username">The username or email of the user.</param>
+    /// <param name="password">The password of the user.</param>
+    /// <param name="user">The user that was found, or null if authentication failed.</param>
+    /// <returns>
+    /// True if the user is authenticated, false otherwise.
+    /// </returns>
+    public bool AuthenticateUser(string username, string password, out User user)
     {
-        using var command = new SQLiteCommand("SELECT * FROM Users WHERE Username = @Username", _connection);
+        using var command = new SQLiteCommand("SELECT * FROM Users WHERE Username = @Username OR Email = @Username", _connection);
         command.Parameters.AddWithValue("@Username", username);
         using var reader = command.ExecuteReader();
-        if (reader.Read())
+        user = User.Empty;
+        if (!reader.Read()) return false;
+
+        var encryption = new Crypt();
+        if (encryption.Decrypt(reader.GetString(3)) != password) return false;
+        user = new User()
         {
-            var encryption = new Crypt();
-            return encryption.Decrypt(reader.GetString(3)) == password;
+            Id = _hashids.Encode(reader.GetInt32(0)),
+            Username = reader.GetString(1),
+            Email = reader.GetString(2),
+            Password = reader.GetString(3)
+        };
+        return true;
+    }
+
+
+    /// <summary>
+    /// Authenticates a user by verifying the provided username or email and password.
+    /// </summary>
+    /// <param name="username">The username or email</param>
+    /// <param name="password">The plain-text password</param>
+    /// <param name="uniqueKey">A unique key to generate the token with</param>
+    /// <param name="token">The outputted token or null if authentication failed.</param>
+    /// <returns></returns>
+    public bool AuthenticateUser(string username, string password, string uniqueKey, [NotNullWhen(true)] out string? token)
+    {
+        if (!AuthenticateUser(username, password, out User user) || user.IsEmpty)
+        {
+            token = null;
+            return false;
         }
 
-        return false;
+        token = GenerateToken(user, uniqueKey);
+        return true;
+    }
+
+    /// <summary>
+    /// Gets all users from the database.
+    /// </summary>
+    /// <returns>An array of User objects representing the users.</returns>
+    public User[] GetUsers()
+    {
+        var command = _connection.CreateCommand();
+        command.CommandText = "SELECT id,username,email FROM Users";
+        var reader = command.ExecuteReader();
+        List<User> users = [];
+        while (reader.Read())
+        {
+            users.Add(new User()
+            {
+                Id = _hashids.Encode(reader.GetInt32(0)),
+                Username = reader.GetString(1),
+                Email = reader.GetString(2)
+            });
+        }
+
+        return users.ToArray();
     }
 
     /// <summary>
@@ -136,6 +195,7 @@ public sealed class UserManager : IDisposable
     /// <returns>The generated token as a string.</returns>
     public string GenerateToken(User user, string uniqueKey)
     {
+        if (user.IsEmpty) throw new ArgumentException("User cannot be empty.", nameof(user));
         var encryption = new Crypt();
         return encryption.Encrypt(JsonConvert.SerializeObject(new { user.Id, user.Username, user.Password, uniqueKey }));
     }
