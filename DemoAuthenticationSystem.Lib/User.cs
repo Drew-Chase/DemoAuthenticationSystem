@@ -41,14 +41,18 @@ public struct User()
     public static User Empty => new User();
 
     /// <summary>
-    /// Gets a value indicating whether the User is empty or not.
+    /// Gets a value indicating whether the User is empty.
     /// </summary>
+    /// <remarks>
+    /// The IsEmpty property returns true if all the properties of the User object (Id, Username, Email, and Password) have null or empty values. This indicates that the User object is empty and does not represent a valid user in the authentication system.
+    /// </remarks>
     /// <value>
     /// <c>true</c> if the User is empty; otherwise, <c>false</c>.
     /// </value>
-    /// <remarks>
-    /// The IsEmpty property is a boolean value that indicates whether the User object is empty or not.
-    /// A User is considered empty when the Id property is null or an empty string.
-    /// </remarks>
-    public bool IsEmpty => string.IsNullOrEmpty(Id);
+    public bool IsEmpty => string.IsNullOrWhiteSpace(Id) && string.IsNullOrWhiteSpace(Username) && string.IsNullOrWhiteSpace(Email) && string.IsNullOrWhiteSpace(Password);
+
+    public override string ToString()
+    {
+        return string.IsNullOrWhiteSpace(Email) ? Username : $"{Username} ({Email})";
+    }
 }
