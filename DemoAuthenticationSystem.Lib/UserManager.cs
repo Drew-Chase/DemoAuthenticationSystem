@@ -187,6 +187,40 @@ public sealed class UserManager : IDisposable
         return users.ToArray();
     }
 
+    public User[] SearchUsers(string query, int limit = 10, int offset = 0, string sort = "username", bool ascending = false)
+    {
+        var command = _connection.CreateCommand();
+        command.CommandText = $"SELECT id,username,email FROM Users WHERE username LIKE @Query OR email LIKE @Query ORDER BY @Sort {(ascending ? "ASC" : "DESC")} LIMIT @Limit OFFSET @Offset";
+        command.Parameters.AddWithValue("@Query", $"%{query}%");
+        command.Parameters.AddWithValue("@Limit", limit);
+        command.Parameters.AddWithValue("@Offset", offset);
+        command.Parameters.AddWithValue("@Sort", sort);
+        var reader = command.ExecuteReader();
+        List<User> users = [];
+        while (reader.Read())
+        {
+            users.Add(new User()
+            {
+                Id = _hashids.Encode(reader.GetInt32(0)),
+                Username = reader.GetString(1),
+                Email = reader.GetString(2)
+            });
+        }
+
+        return users.ToArray();
+    }
+
+    public void DeleteUser(string id)
+    {
+        int[]? decodedUserIds = _hashids.Decode(id);
+        if (decodedUserIds is null || decodedUserIds.Length == 0) return;
+        int userId = decodedUserIds[0];
+
+        using var command = new SQLiteCommand("DELETE FROM Users WHERE Id = @Id", _connection);
+        command.Parameters.AddWithValue("@Id", userId);
+        command.ExecuteNonQuery();
+    }
+
     /// <summary>
     /// Generates a token for the specified user and unique key.
     /// </summary>
