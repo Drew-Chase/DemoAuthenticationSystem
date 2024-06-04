@@ -53,6 +53,6 @@ public struct User()
 
     public override string ToString()
     {
-        return string.IsNullOrWhiteSpace(Email) ? Username : $"{Username} ({Email})";
+        return $"Id: '{Id}', Username: '{Username}', Email: '{Email}'";
     }
 }
