@@ -4,6 +4,7 @@ using System.Net;
 using Chase.CommonLib.Math;
 using HashidsNet;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace DemoAuthenticationSystem.Lib;
 
@@ -82,14 +83,14 @@ public sealed class UserManager : IDisposable
     /// </summary>
     /// <param name="id">The ID of the user.</param>
     /// <returns>The user object with the specified ID, or null if the user is not found.</returns>
-    public User? GetUserById(string id)
+    public User GetUserById(string id)
     {
         // Decode the hash ID to get the actual user ID.
         int[]? decodedUserIds = _hashids.Decode(id);
-        if (decodedUserIds is null || decodedUserIds.Length == 0) return null;
+        if (decodedUserIds is null || decodedUserIds.Length == 0) return User.Empty;
         int userId = decodedUserIds[0];
 
-        using var command = new SQLiteCommand("SELECT * FROM Users WHERE Id = @Id", _connection);
+        using var command = new SQLiteCommand("SELECT * FROM Users WHERE Id = @Id LIMIT 1", _connection);
         command.Parameters.AddWithValue("@Id", userId);
         using var reader = command.ExecuteReader();
         if (reader.Read())
@@ -103,7 +104,7 @@ public sealed class UserManager : IDisposable
             };
         }
 
-        return null;
+        return User.Empty;
     }
 
     /// <summary>
@@ -112,7 +113,7 @@ public sealed class UserManager : IDisposable
     /// <param name="id">The ID of the user to retrieve.</param>
     /// <param name="user">The retrieved user. Null if the user doesn't exist.</param>
     /// <returns>True if the user exists, false otherwise.</returns>
-    public bool TryGetUserById(string id, [NotNullWhen(true)] out User? user) => (user = GetUserById(id)) != null;
+    public bool TryGetUserById(string id, out User user) => !(user = GetUserById(id)).IsEmpty;
 
     /// <summary>
     /// Authenticates a user by verifying the provided username or email and password.
@@ -125,7 +126,13 @@ public sealed class UserManager : IDisposable
     /// </returns>
     public bool AuthenticateUser(string username, string password, out User user)
     {
-        using var command = new SQLiteCommand("SELECT * FROM Users WHERE Username = @Username OR Email = @Username", _connection);
+        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+        {
+            user = User.Empty;
+            return false;
+        }
+
+        using var command = new SQLiteCommand("SELECT * FROM Users WHERE Username = @Username OR Email = @Username LIMIT 1", _connection);
         command.Parameters.AddWithValue("@Username", username);
         using var reader = command.ExecuteReader();
         user = User.Empty;
@@ -151,10 +158,11 @@ public sealed class UserManager : IDisposable
     /// <param name="password">The plain-text password</param>
     /// <param name="uniqueKey">A unique key to generate the token with</param>
     /// <param name="token">The outputted token or null if authentication failed.</param>
+    /// <param name="user">The outputted user or empty user object</param>
     /// <returns></returns>
-    public bool AuthenticateUser(string username, string password, string uniqueKey, [NotNullWhen(true)] out string? token)
+    public bool AuthenticateUser(string username, string password, string uniqueKey, [NotNullWhen(true)] out string? token, out User user)
     {
-        if (!AuthenticateUser(username, password, out User user) || user.IsEmpty)
+        if (!AuthenticateUser(username, password, out user) || user.IsEmpty)
         {
             token = null;
             return false;
@@ -162,6 +170,20 @@ public sealed class UserManager : IDisposable
 
         token = GenerateToken(user, uniqueKey);
         return true;
+    }
+
+    /// <summary>
+    /// Authenticates the user with the provided token and unique key.
+    /// </summary>
+    /// <param name="token">The token to be used for authentication.</param>
+    /// <param name="uniqueKey">The unique key used for token generation.</param>
+    /// <param name="user">The authenticated user object if the authentication is successful; otherwise an empty user object.</param>
+    /// <returns>True if the user is successfully authenticated; otherwise false.</returns>
+    public bool AuthenticateUserWithToken(string token, string uniqueKey, out User user)
+    {
+        user = GetUserFromToken(token);
+        user = GetUserById(user.Id);
+        return !user.IsEmpty && GenerateToken(user, uniqueKey) == token;
     }
 
     /// <summary>
@@ -241,6 +263,24 @@ public sealed class UserManager : IDisposable
     /// <param name="address">The connecting IP Address</param>
     /// <returns>The generated token as a string.</returns>
     public string GenerateToken(User user, IPAddress address) => GenerateToken(user, address.ToString());
+
+    /// <summary>
+    /// Retrieves a user object from the given token.
+    /// </summary>
+    /// <param name="token">The encrypted token containing user information.</param>
+    /// <returns>The user object extracted from the token.</returns>
+    private User GetUserFromToken(string token)
+    {
+        JObject json = JObject.Parse(new Crypt().Decrypt(token));
+        if (json.TryGetValue("Id", out var id) && json.TryGetValue("Username", out var username) && json.TryGetValue("Password", out var password))
+            return new User()
+            {
+                Id = id.ToString(),
+                Username = username.ToString(),
+                Password = password.ToString()
+            };
+        return User.Empty;
+    }
 
     public void Dispose()
     {
